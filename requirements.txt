@@ -1,0 +1,9 @@
+langchain
+langchain-community 
+langchain-core 
+python-dotenv
+playwright
+langchain-groq
+beautifulsoup4
+pandas
+-e .
