@@ -6,4 +6,6 @@ playwright
 langchain-groq
 beautifulsoup4
 pandas
+nest-asyncio
+Flask
 -e .
