@@ -22,7 +22,15 @@ splits=text_split(docs_transformed)
 
 runnable = prompt | llm.with_structured_output(schema=Data)
 
-result = runnable.invoke({"text": splits[2].page_content})
+text_content = splits[2].page_content
+
+# result = runnable.invoke({"text": splits[2].page_content})
+
+try:
+    result = runnable.invoke({"text": text_content})
+    print(result)
+except Exception as e:
+    print(f"Error: {e}")
 
 df = create_people_dataframe(result)
 
