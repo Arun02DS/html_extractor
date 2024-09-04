@@ -1,15 +1,17 @@
 from src.logger import logging
 from src.exception import HtmlExtractor
 import os,sys
-from typing import List
 from langchain_community.document_loaders import AsyncChromiumLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from src.config import model_name,chunk_overlap,chunk_size
+from src.config import chunk_overlap,chunk_size,TEXT_FILE_NAME
+from collections import namedtuple
+import pandas as pd
+from datetime import datetime
 
 
 
-def load_urls(urls:List):
+def load_urls(url):
     """
     Description: This function extract html content in raw format.
 
@@ -18,7 +20,7 @@ def load_urls(urls:List):
     """
     try:
         logging.info("Url are being loading")
-        loader = AsyncChromiumLoader(urls, user_agent="MyAppUserAgent")
+        loader = AsyncChromiumLoader(url)
         docs = loader.load()
         logging.info("Docs are created")
         return docs
@@ -34,9 +36,12 @@ def save_html_content(docs):
     
     """
     try:
-        with open("url_langchain_html.txt", "w", encoding="utf-8") as file:
+        artifact_dir=os.path.join(os.getcwd(),"artifacts",f"{datetime.now().strftime('%d%m%Y__%H%M%S')}")
+        os.makedirs(artifact_dir,exist_ok=True)
+        filepath = os.path.join(artifact_dir, TEXT_FILE_NAME)
+        with open(filepath, "w", encoding="utf-8") as file:
             file.write(str(docs[0].page_content))
-        logging.inf0(f"Page content has been saved to url_langchain_html.txt/n{docs[0].page_content}")
+        logging.info(f"Page content has been saved to url_langchain_html.txt")
     except Exception as e:
         raise HtmlExtractor(e,sys)
     
@@ -50,7 +55,7 @@ def transform_html(docs):
     try:
         bs_transformer = BeautifulSoupTransformer()
         docs_transformed = bs_transformer.transform_documents(docs, 
-                                                              tags_to_extract=["p", "h3", "div", "a"])
+                                                              tags_to_extract=["h3", "p"])
         logging.info("HTML page transformed.")
         return docs_transformed
     except Exception as e:
@@ -66,10 +71,25 @@ def text_split(docs_transformed):
     try:
         text_splitter = RecursiveCharacterTextSplitter(chunk_size = chunk_size, chunk_overlap = chunk_overlap)
         text_chunks = text_splitter.split_documents(docs_transformed)
-        logging.info(f"length of chucks: {len(text_chunks)}")
-        logging.info(f"chuck[0]: {text_chunks[0]}")
+        logging.info(f"length of splits: {len(text_chunks)}")
+        logging.info(f"split[1]: {text_chunks[1]}")
         return text_chunks
     
     except Exception as e:
         raise HtmlExtractor(e,sys)
+    
+def create_people_dataframe(result):
+    """
+    Converts a list of Person namedtuples into a pandas DataFrame and return DtaFrame.
 
+    Args:
+        result: An object with a 'people' attribute that is a list of Person namedtuples.
+    """
+    try:
+        Person = namedtuple('Person', ['Name', 'Position', 'Research_interest'])
+        people_dicts = [{'Name': person.Name, 'Position': person.Position, 'Research_interest': person.Research_interest} for person in result.people]
+        df = pd.DataFrame(people_dicts)
+        logging.info("Dataframe created")
+        return df
+    except Exception as e:
+        raise HtmlExtractor(e,sys)
